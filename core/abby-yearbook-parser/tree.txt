@@ -1,0 +1,4 @@
+【Root】             
+   |-- split.py    
+   |-- readme.md   
+   |-- main.py     
