@@ -15,7 +15,7 @@ sys.path.append("..")
 
 from os import path
 from fastapi import APIRouter, FastAPI
-from fastapi import UploadFile, File, HTTPException, Depends
+from fastapi import UploadFile, HTTPException, Depends
 from loguru import logger
 
 
@@ -35,9 +35,10 @@ def init(app: FastAPI):
     if not config.year_book_enable:
         return
 
+    app.include_router(router)
     config.year_book_settings = ABBYYearBookExcelFilter.CreateSettings(DEFAULT_SETTINGS)
 
-    @router.post("/year")
+    @router.post("/year_book", response_model=Res, summary="上传psd、字体、图片等文件")
     async def year_book_router(
         file: UploadFile, config: Settings = Depends(get_settings)
     ):

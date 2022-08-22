@@ -39,17 +39,17 @@ year_book.init(app)
 if config.DEV:
     app.include_router(test.router)
 
-    @app.get("/", summary="显示当前服务器所有配置 （开发模式下）")
-    async def root(settings: Settings = Depends(get_settings)):
-        return {"msg": "当前服务器配置", **settings.dict()}
+    # @app.get("/", summary="显示当前服务器所有配置 （开发模式下）")
+    # async def root(settings: Settings = Depends(get_settings)):
+    #     return {"msg": "当前服务器配置", **settings.dict()}
 
-    @app.get("/exit", summary="退出服务器 （开发模式下）")
-    async def Exit():
-        exit()
+    # @app.get("/exit", summary="退出服务器 （开发模式下）")
+    # async def Exit():
+    #     exit()
 
-    @app.get("/restart", summary="重启服务器 （开发模式下）")
-    async def restart():
-        exit()
+    # @app.get("/restart", summary="重启服务器 （开发模式下）")
+    # async def restart():
+    #     exit()
 
 
 if __name__ == "__main__":
