@@ -7,6 +7,7 @@ from functools import lru_cache
 import Types as T
 from docs.description import DESCRIPTION, LICENSE_INFO, CONTACT
 from core.year_book.abby import ABBYYearBookExcelFilterSettings
+from utils.index import get_inside_ip
 
 ROOT_PATH = os.getcwd()
 STATIC_PATH = path.join(ROOT_PATH, "/static")
@@ -16,12 +17,13 @@ class Settings(BaseSettings):
     DEV: bool = True  # 是否开发模式
 
     app_name: str = "CPS 自用FastApi脚手架"
-    app_host: str = "127.0.0.1"  # 地址
+    app_host: str = "0.0.0.0"  # 地址
     app_port: int = 4040  # 端口
     app_version: str = "v1"
     app_description: str = DESCRIPTION
     app_contact: dict = CONTACT
     app_license_info: dict = LICENSE_INFO
+    app_inner_ip: str = get_inside_ip()
 
     # 日志相关
     log_enable: bool = True

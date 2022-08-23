@@ -32,7 +32,25 @@ class Uploader:
         try:
             if not batch_size:
                 # 每次写入文件的数据大小，这里代表10 MiB
-                batch_size = 10 * 2 ** 20
+                batch_size = 10 * 2**20
+
+            with open(output_path, "wb") as f:  # 分批写入数据
+                # 从网络文件流分批读取数据到 b'',再写入文件
+                for i in iter(lambda: file.file.read(batch_size), b""):
+                    f.write(i)
+                return True
+        except:
+            return False
+
+    @staticmethod
+    def stream_file_sync(file, output_path: str, batch_size: int = None) -> bool:
+        """
+        大文件上传，以流的形式按量读取保存文件，默10m
+        """
+        try:
+            if not batch_size:
+                # 每次写入文件的数据大小，这里代表10 MiB
+                batch_size = 10 * 2**20
 
             with open(output_path, "wb") as f:  # 分批写入数据
                 # 从网络文件流分批读取数据到 b'',再写入文件

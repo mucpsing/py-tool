@@ -35,7 +35,7 @@ from utils import index as cps_utils
 
 class ABBYYearBookExcelFilterSettings(BaseModel):
     fix_24_to_new_day: bool = True  # 部分年鉴会使用24作为小时单位，修复后改位置变成0，日数据添加1
-    fin_24_col_names: list[str] = ["C", "H", "M", "R"]
+    fix_24_col_names: list[str] = ["C", "H", "M", "R"]
     word_strip: str  # 一些在数据前后的多余符号
     word_wipe: list[str]  # 一些需要擦除的字符
     word_replace: dict[str, list[str]]  # 一些需要替换的字符
@@ -366,11 +366,11 @@ class ABBYYearBookExcelFilter:
                 new_data = self.__cell_filter(tar)
 
                 # 修复时列数据为25的问题
-                if (
-                    self.settings.fix_24_to_new_day
-                    and self.currt_col_name in self.settings.fin_24_col_names
-                ):
-                    new_data = self.fix_24_on_time_cols(new_data)
+                # if (
+                #     self.settings.fix_24_to_new_day
+                #     and self.currt_col_name in self.settings.fix_24_col_names
+                # ):
+                #     new_data = self.fix_24_on_time_cols(new_data)
 
                 # 最终写入数据
                 col_data[index] = new_data
@@ -391,25 +391,28 @@ class ABBYYearBookExcelFilter:
                     self.table[self.pre_col_name][self.currt_row_index] = str(
                         int(cell_data) + 1
                     )
-
+                    return "0"
                     break
                 search_index -= 1
 
             print(f"发现24小时时间单位问题: [{self.currt_col_name}{self.currt_row_index + 1 }]")
             return cell_content
 
+        return cell_content
+
     def __cell_filter(self, cell_content: str) -> str:
-        # 返回过滤修正后的单元格数据
+        # word_wipe 过滤
         for each in self.settings.word_wipe:
             cell_content = cell_content.replace(each, "")
 
-        # 过滤数据左右的字符
+        # word_strip 过滤
         cell_content = cell_content.strip(self.settings.word_strip)
 
-        # 去除空格
+        # 空格过滤
         cell_content = cell_content.replace(" ", "")
 
-        # 替换数据过滤，目前根据self.settings.word_replace字典来遍历
+        # word_replace 过滤
+        # 替换数据，根据self.settings.word_replace字典来遍历
         for replace_words, search_words in self.settings.word_replace.items():
             for index in range(len(search_words)):
                 for search_word in search_words[index]:
@@ -476,7 +479,7 @@ class ABBYYearBookExcelFilter:
             output_excel, header=self.settings.cols_show_names, index=False
         )
         output_excel.save()
-        return output_excel
+        return output_name
 
     def __len__(self):
         return len(self.data_region_list)

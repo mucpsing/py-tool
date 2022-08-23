@@ -1,16 +1,9 @@
 DESCRIPTION = """
 自用的脚手架，集成一些<b>常用</b>的功能：
-<br> 1、离线的swagger和redoc
-<br> 2、静态服务
-<br> 3、文件上传、下载
-<br> 4、JWT权鉴
-<br> 5、定时任务
-<br> 6、基本的业务功能约束
-<br> 7、一键开启gzip
-<br> 8、一键开启跨域
-<br>
-<br> PS: 自己用的爽才是最关键的，fastapi的类型提示让项目无论过了多久都能快速回忆迭代更新，
-<br> 真的比很多老牌web框架要舒服，再集成上一些常用功能，爽~~~"""
+<br> 1、`/abby_yearbook_excel_parser` 将abby识别后的excel文件进行基础过滤
+<br> 2、`/year_book_format` 手动检查好后，自动根据站点分类成指定的格式
+
+"""
 
 CONTACT = {
     "name": "Capsion / CPS",

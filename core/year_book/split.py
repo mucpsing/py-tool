@@ -17,7 +17,7 @@ from os import path
 from pydantic import BaseModel
 import pandas as pd
 
-import cps_utils
+import utils.index as cps_utils
 
 
 def split_content(table):
@@ -58,30 +58,45 @@ def split_content(table):
     return region
 
 
-if __name__ == "__main__":
-    # 2012_1660907093.xlsx
-    cols_names = list(cps_utils.get_az("A", "T"))
-    cols_show_names = ["月", "日", "时分", "水位 (m)", "流量 (m3/s)"] * 4
-    target = path.realpath(r"./2015流量a_1660914198.xlsx")
+def formater(target: str, output_name: str = "", over_write: bool = False):
+    try:
+        cols_names = list(cps_utils.get_az("A", "T"))
+        cols_show_names = ["月", "日", "时分", "水位 (m)", "流量 (m3/s)"] * 4
 
-    excel = pd.read_excel(
-        target, names=cols_names, dtype="str", index_col=False, header=0
-    )
-
-    region = split_content(excel)
-
-    writer = pd.ExcelWriter("./2015a_new.xlsx")
-    excel.to_excel(writer, index=False, sheet_name="检查")
-
-    for each in region:
-        sheet_name = each["name"]
-
-        header = pd.DataFrame([{"A": sheet_name}])
-        content = excel[each["region"][0] : each["region"][1]]
-        data = pd.concat([header, content])
-
-        data.to_excel(
-            writer, sheet_name=sheet_name, index=False, header=cols_show_names
+        excel = pd.read_excel(
+            target, names=cols_names, dtype="str", index_col=False, header=0
         )
 
-    writer.save()
+        region = split_content(excel)
+
+        if not output_name:
+            dirname = path.dirname(target)
+            name, ext = path.splitext(path.basename(target))
+            output_name = path.join(dirname, f"{name}_formated{ext}")
+
+        writer = pd.ExcelWriter(output_name)
+        excel.to_excel(writer, index=False, sheet_name="检查")
+        for each in region:
+            sheet_name = each["name"]
+
+            header = pd.DataFrame([{"A": sheet_name}])
+            content = excel[each["region"][0] : each["region"][1]]
+            data = pd.concat([header, content])
+
+            data.to_excel(
+                writer, sheet_name=sheet_name, index=False, header=cols_show_names
+            )
+
+        writer.save()
+        return output_name
+    except Exception as e:
+        print("formater fial", e)
+        return ""
+
+
+if __name__ == "__main__":
+    target_dir = r"Z:\work\扫描\年检\检查完"
+    for each in os.listdir(target_dir):
+        target = path.join(target_dir)
+
+        formater(target)

@@ -1,5 +1,17 @@
 import time
 from functools import wraps
+import socket
+
+
+def get_inside_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        return ip
+
+    finally:
+        s.close()
 
 
 def get_az(start: str | int, end: str | int = None) -> str:
@@ -104,3 +116,5 @@ def func_timeit(count=1):
 if __name__ == "__main__":
     target = " --__-  －－-１  sss２ asdfasdf ０ 。  "
     print(get_int(target))
+
+    print(get_inside_ip())
