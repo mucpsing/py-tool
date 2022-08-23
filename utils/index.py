@@ -3,15 +3,16 @@ from functools import wraps
 import socket
 
 
-def get_inside_ip():
+def get_inside_ip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
-        return ip
+        return str(ip)
 
     finally:
         s.close()
+        return ""
 
 
 def get_az(start: str | int, end: str | int = None) -> str:
