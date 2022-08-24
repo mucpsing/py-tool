@@ -64,7 +64,7 @@ def init(app: FastAPI):
 
         upload_res = Uploader.stream_file_sync(file, output_path)
 
-        logger.info(f"开始处理文件{file.filename}")
+        logger.debug(f"开始处理文件{file.filename}")
 
         # 通过读取二进制文件头来识别文件格式
 
@@ -78,13 +78,13 @@ def init(app: FastAPI):
 
             url = f"{config.app_inner_ip}:{config.app_port}{config.year_book_upload_url}/{path.basename(output_excel)}"
 
-            logger.info(f"{file.filename} => {upload_res}")
+            logger.debug(f"{file.filename} => {upload_res}")
 
             return Res(msg="文件处理完成，复制以下url到浏览器下载: ", res={"url": url})
 
         else:
 
-            logger.warning(f"{file.filename} 上传失败")
+            logger.debug(f"{file.filename} 上传失败")
             raise HTTPException(200, detail="上传失败")
 
     return app

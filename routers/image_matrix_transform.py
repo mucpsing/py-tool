@@ -39,6 +39,30 @@ def init(app: FastAPI):
     if not config.image_matrix_enable:
         return
 
+    app.include_router(router)
+
+    @router.post(
+        "/image_matrix_transform",
+        response_model=Res,
+        summary="图片2D矩阵变换",
+        description=description,
+    )
+    def image_matrix_transform_router(
+        file: UploadFile, config: Settings = Depends(get_settings)
+    ):
+
+        output_path = path.join(config.image_matrix_upload_path, file.filename)
+
+        upload_res = Uploader.stream_file_sync(file, output_path)
+
+        if not upload_res:
+            logger.debug(f"{file.filename} 上传失败")
+            raise HTTPException(200, detail="上传失败")
+
+        logger.debug(f"文件上传成功{file.filename}")
+
+        # ImageMatrixTransform(upload_res).to_file()
+
 
 if __name__ == "__main__":
     pass
