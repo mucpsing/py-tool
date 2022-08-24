@@ -55,6 +55,7 @@ class ABBYYearBookExcelFilter:
         self.source = target
         self.settings = settings
         self.data_region_list: list[RegionInfo] = list()
+        self.report = ""  # 错误报告
 
         # 状态记录
         self.pre_col_name: str = ""  # 上一列的列名
@@ -117,10 +118,10 @@ class ABBYYearBookExcelFilter:
         return True
 
     def __show_data(self):
-        [print(cps_utils.print_dict(each.dict())) for each in self.data_region_list]
-        print("处理结果")
-        print("行数,列数: ", self.table.shape)
-        print("当前处理的总页数: ", self.data_region_list[-1].count)
+        # [print(cps_utils.print_dict(each.dict())) for each in self.data_region_list]
+        lg.info(f"处理结果")
+        lg.info(f"行数,列数: {self.table.shape}")
+        lg.info(f"当前处理的总页数: {self.data_region_list[-1].count}")
         return self
 
     @lg.catch
@@ -350,20 +351,34 @@ class ABBYYearBookExcelFilter:
                 new_data = self.__cell_filter(tar)
 
                 # 修复时列数据为25的问题
-                # if (
-                #     self.settings.fix_24_to_new_day
-                #     and self.currt_col_name in self.settings.fix_24_col_names
-                # ):
-                #     new_data = self.fix_24_on_time_cols(new_data)
+                if (
+                    self.settings.fix_24_to_new_day
+                    and self.currt_col_name in self.settings.fix_24_col_names
+                ):
+                    new_data = self.fix_24_on_time_cols(new_data)
+
+                # 检查数据
+                self.__cell_data_check(new_data)
 
                 # 最终写入数据
                 col_data[index] = new_data
+
+    def __cell_data_check(self, tar: str):
+        for report_word in self.settings.word_report:
+            if report_word in tar:
+                poistiton = f"[{self.currt_col_name}:{self.currt_row_index+1}]"
+                self.report += f"位置: {poistiton}, 操作异常符号: {report_word}"
+                break
 
     def fix_24_on_time_cols(self, cell_content: str) -> str:
         """
         修复小时列为25的数据
         """
         if cell_content == "24":
+            report = f"发现24小时时间单位问题: [{self.currt_col_name}{self.currt_row_index + 1 }]"
+            lg.warning(report)
+            self.report += f"{report}\n"
+
             # 获取日期列的数据
             pre_col_data = self.table[self.pre_col_name]
             search_index = self.currt_row_index
@@ -379,7 +394,6 @@ class ABBYYearBookExcelFilter:
                     break
                 search_index -= 1
 
-            print(f"发现24小时时间单位问题: [{self.currt_col_name}{self.currt_row_index + 1 }]")
             return cell_content
 
         return cell_content

@@ -36,6 +36,9 @@ description = """
 - 上传abby识别后的excel文件
 - 下载过滤后的文件，进行肉眼检查。。。
 - 调用另一个接口上传文件进行格式化
+
+## 注意事项:
+- 数据需要手动确保为20列，有时候abby会识别成21列，首要手动修复
 """
 
 
@@ -51,7 +54,7 @@ def init(app: FastAPI):
     @router.post(
         "/abby_yearbook_excel_parser",
         response_model=Res,
-        summary="年鉴excel处理接口",
+        summary="年鉴-[洪水水文摘录表]，处理通过abby识别后导出的excel文件（确保20列数据）",
         description=description,
     )
     def year_book_filter(file: UploadFile, config: Settings = Depends(get_settings)):

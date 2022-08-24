@@ -3,7 +3,12 @@ from functools import wraps
 import socket
 
 
+# def check_path_and_make(target_path):
+#     """检查目录，如果不存在则创建"""
+
+
 def get_inside_ip() -> str:
+    """获取内网IP"""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
@@ -12,7 +17,6 @@ def get_inside_ip() -> str:
 
     finally:
         s.close()
-        return ""
 
 
 def get_az(start: str | int, end: str | int = None) -> str:

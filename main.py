@@ -17,7 +17,8 @@ from fastapi import FastAPI, Depends
 from config import get_settings, Settings
 
 from utils import logger
-from routers import docs, static, year_book, year_book_formart
+from events import startup
+from routers import docs, static, year_book_parser, year_book_formart
 
 config = get_settings()
 app = FastAPI(
@@ -29,11 +30,12 @@ app = FastAPI(
     redoc_url=None,
 )
 
+startup.init(app)
 
 logger.init(app)
 static.init(app)
 docs.init(app)
-year_book.init(app)
+year_book_parser.init(app)
 year_book_formart.init(app)
 
 # if config.DEV:

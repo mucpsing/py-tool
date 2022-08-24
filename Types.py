@@ -10,7 +10,7 @@
 # @Description: 功能描述
 #
 import os, sys
-from typing import Any
+from typing import Any, NewType, Optional
 
 sys.path.append("..")
 from os import path
@@ -45,3 +45,23 @@ class Fileinfo(BaseModel):
     file_type: str
     size: str
     len: int
+
+
+Coords2D = NewType("[x:int, y:int]", list[int])
+
+
+class Coordinates2D(BaseModel):
+    left_top: Optional[Coords2D]
+    right_top: Optional[Coords2D]
+    right_down: Optional[Coords2D]
+    left_down: Optional[Coords2D]
+
+
+if __name__ == "__main__":
+    xy_obj = {"left_top": [0, 0]}
+
+    xy = Coordinates2D(left_top=[1, 2])
+    print(xy.dict())
+
+    xy_obj.update(xy.dict())
+    print(xy_obj)

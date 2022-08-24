@@ -48,7 +48,7 @@ def init(app: FastAPI):
     @router.post(
         "/abby_yearbook_excel_formater",
         response_model=Res,
-        summary="将年鉴数据按站名分类格式化",
+        summary="年鉴-[洪水水文摘录表]，根据站名按sheet分类重新生成excel文件",
         description=description,
     )
     def year_book_formater_router(

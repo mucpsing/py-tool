@@ -58,7 +58,7 @@ def split_content(table):
     return region
 
 
-def formater(target: str, output_name: str = "", over_write: bool = False):
+def formater(target: str, output_name: str = ""):
     try:
         cols_names = list(cps_utils.get_az("A", "T"))
         cols_show_names = ["月", "日", "时分", "水位 (m)", "流量 (m3/s)"] * 4

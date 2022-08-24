@@ -10,7 +10,7 @@ from core.year_book.abby import ABBYYearBookExcelFilterSettings
 from utils.index import get_inside_ip
 
 ROOT_PATH = os.getcwd()
-STATIC_PATH = path.join(ROOT_PATH, "/static")
+STATIC_PATH = path.join(ROOT_PATH, "static")
 
 
 class Settings(BaseSettings):
@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     year_book_upload_path: str = path.join(ROOT_PATH, "static/year_book/result")
     year_book_settings: ABBYYearBookExcelFilterSettings = None
     year_book_log_file: str = path.join(ROOT_PATH, "logs", "year_book.log")
+
+    # 图片相关接口配置
+    image_matrix_enable: bool = True
+    image_matrix_upload_url: str = "/image/matrix_transform"
+    image_matrix_upload_path: str = path.join(STATIC_PATH, "image/matrix_transform")
 
     class Config:
         env_file: str = path.join(ROOT_PATH, "config.ini")  # 读取失败
