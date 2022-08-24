@@ -18,7 +18,8 @@ from config import get_settings, Settings
 
 from utils import logger
 from events import startup
-from routers import docs, static, year_book_parser, year_book_formart
+from routers import docs, static, upload
+from routers import year_book_parser, year_book_formart
 
 config = get_settings()
 app = FastAPI(
@@ -31,6 +32,7 @@ app = FastAPI(
 )
 
 startup.init(app)
+upload.init(app)
 
 logger.init(app)
 static.init(app)
@@ -38,8 +40,10 @@ docs.init(app)
 year_book_parser.init(app)
 year_book_formart.init(app)
 
-# if config.DEV:
-# app.include_router(test.router)
+if config.DEV:
+    from routers import test
+
+    app.include_router(test.router)
 
 # @app.get("/", summary="显示当前服务器所有配置 （开发模式下）")
 # async def root(settings: Settings = Depends(get_settings)):
