@@ -12,6 +12,7 @@
 
 import asyncio
 from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import UploadFile
 from pydantic import BaseModel, Field
 from loguru import logger
 
@@ -24,10 +25,8 @@ Req_example = {"request_str": "test_str", "request_int": 123}
 
 
 class Req(BaseModel):
-    request_str: str = Field(
-        default="string", title="请求字符串", max_length=32, min_length=3
-    )
-    request_int: int = Field(title="请求的字符串", gt=33, lt=12)
+    request_str: str = Field(default="string", title="请求字符串")
+    request_int: int = Field(title="请求的字符串")
 
     class Config:
         schema_extra: Req_example
@@ -51,6 +50,6 @@ async def test_get(test_param: str = Path(default=None)):
 async def test_post(req: Req):
     for each in range(5):
         await asyncio.sleep(1)
-        logger.debug(f"post 请求处理中。 {Req}")
+        # logger.debug(f"post 请求处理中。 {req.schema_json()}")
 
-    return {"test_params": Req.request_str}
+    return {"test_params": req.request_str}
