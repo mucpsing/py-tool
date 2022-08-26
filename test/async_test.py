@@ -36,7 +36,7 @@ async def multi_request(urls: list[str], params: list = list()) -> list:
             text = await response.text()
             return text
 
-    connector = aiohttp.TCPConnector(limit=1001)
+    connector = aiohttp.TCPConnector(limit=200)
     # connector = aiohttp.TCPConnector(force_close=True)
     async with aiohttp.ClientSession(connector=connector) as session:
         # async with aiohttp.ClientSession() as session:
@@ -64,10 +64,10 @@ async def main(urls, params):
 
 if __name__ == "__main__":
 
-    count = 1000
+    count = 10
     urls_get = [f"http://localhost:4040/test/get/{e}" for e in range(count)]
-
     urls_post = [f"http://localhost:4040/test/post" for e in range(count)]
+
     params = [{"request_str": str(e), "request_int": e} for e in range(count)]
 
     tasks = main(urls_post, params)

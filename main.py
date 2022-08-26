@@ -69,4 +69,3 @@ if __name__ == "__main__":
         log_level=config.log_level,  # 日志等级
         reload=config.DEV,  # 热更新
     )
-    print(f"app 运行成功，请访问: http://{config.app_host}:{config.app_port}")

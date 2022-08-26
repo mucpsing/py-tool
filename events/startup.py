@@ -18,6 +18,7 @@ if __name__ == "__main__":
 
 from os import path
 from fastapi import FastAPI
+from loguru import logger
 
 from config import get_settings
 from events import config_check
@@ -25,6 +26,10 @@ from events import config_check
 
 def init(app: FastAPI) -> FastAPI:
     config = get_settings()
+
+    @app.on_event("startup")
+    def start():
+        logger.info(f"app 运行成功，请访问: http://{config.app_host}:{config.app_port}")
 
     @app.on_event("startup")
     def events_config_check():
