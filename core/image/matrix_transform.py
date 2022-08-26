@@ -13,17 +13,25 @@
 import enum, time
 from PIL import Image
 from os import path
-from typing import NewType
+from typing import NewType, Optional, TypeAlias
+
+from pydantic import BaseModel
 
 PIL_IMG = NewType("Image.open()", object)
-Coords2D = NewType("[x:int, y:int]", list[int])
-XY_OBJ = NewType("{'left_top':(x:int, y:int), .../}", dict[str, tuple[int, int]])
-XY_LIST = NewType("[(x:int, y:int), .../]", list[tuple[int, int]])
+Point2D: TypeAlias = tuple[int, int]
+XY_LIST: TypeAlias = list[Point2D]
 
 
-class PositionMode(enum.Enum):
-    ABSOLUTE = 0  # 声明当前坐标是绝对坐标
-    RELATIVE = 1  # 声明当前坐标是相对坐标
+class MatrixXY(BaseModel):
+    left_top: Optional[Point2D] = None
+    right_top: Optional[Point2D] = None
+    right_down: Optional[Point2D] = None
+    left_down: Optional[Point2D] = None
+
+
+class PositionMode(str, enum.Enum):
+    ABSOLUTE = "absolute"  # 声明当前坐标是绝对坐标
+    RELATIVE = "relative"  # 声明当前坐标是相对坐标
 
 
 class ImageMatrixTransform:
@@ -35,24 +43,30 @@ class ImageMatrixTransform:
     }
 
     def __init__(
-        self, img: str, xy: XY_OBJ = None, mode: PositionMode = PositionMode.ABSOLUTE
+        self, img: str, xy: MatrixXY = None, mode: PositionMode = PositionMode.ABSOLUTE
     ):
         self.img_path = img
         self.img = Image.open(img).convert("RGBA")
         self.mode = mode  # absolute | relative 相对坐标或者绝对坐标
-        self.transform_img = None  # 用来存放改变透视后的图片实例
-        self.xy_obj = {
-            "left_top": [0, 0],
-            "right_top": [self.img.width, 0],
-            "right_down": [self.img.width, self.img.height],
-            "left_down": [0, self.img.height],
-        }
+        self.transform_img: PIL_IMG = None  # 用来存放改变透视后的图片实例
+        self.xy_obj = MatrixXY(
+            **{
+                "left_top": [0, 0],
+                "right_top": [self.img.width, 0],
+                "right_down": [self.img.width, self.img.height],
+                "left_down": [0, self.img.height],
+            }
+        )
 
         # ["left_top", "right_top", "right_down", "left_down"]
         self.xy_list: XY_LIST = list()
 
         if xy:
             self.transform(xy)
+
+    def __del__(self):
+        self.img.close()
+        self.transform_img.close()
 
     @property
     def result(self) -> PIL_IMG:
@@ -76,7 +90,7 @@ class ImageMatrixTransform:
             self.transform_img.show()
         return self
 
-    def transform(self, xy: XY_OBJ = None):
+    def transform(self, xy: MatrixXY = None):
         if xy:
             self.xy_list = self.conver_xy_obj_2_list(xy)
 
@@ -100,52 +114,46 @@ class ImageMatrixTransform:
 
         return self
 
-    def conver_xy_obj_2_list(self, xy_obj: XY_OBJ) -> XY_LIST:
+    def conver_xy_obj_2_list(self, xy_obj: MatrixXY) -> XY_LIST:
         """
         将四点坐标转换为数组，然后使用np能更快的计算，入参采用对象的方式，入参不用每个位置都输入坐标，更自由
 
-        - param xy_obj :{Coordinates2D} 对象形式的坐标点信息，类型仅作提示，不需实际采用
+        - param xy_obj :{MatrixXY} 对象形式的坐标点信息，类型仅作提示，不需实际采用
 
         @example
         ```py
-        # input
-        {
-            "left_top": (0, 0),
-            "right_top": (1, 1),
-            "right_down": (2, 2),
-            "left_down": (3, 3),
-        }
-
         # output
-        [(0,0), (1, 1), (2, 2), (3, 3)]
+        XY_LIST[(0,0), (1, 1), (2, 2), (3, 3)]
         ```
         """
 
         if self.mode == PositionMode.ABSOLUTE:
-            self.xy_obj.update(xy_obj)
-            return [
-                self.xy_obj["left_top"],
-                self.xy_obj["right_top"],
-                self.xy_obj["right_down"],
-                self.xy_obj["left_down"],
-            ]
+            base_xy = self.xy_obj.dict()
+            base_xy.update(xy_obj.dict(exclude_unset=True))
+
+            return (
+                base_xy["left_top"],
+                base_xy["right_top"],
+                base_xy["right_down"],
+                base_xy["left_down"],
+            )
 
         elif self.mode == PositionMode.RELATIVE:
-            # 使用更新对象的方式，入参不用每个位置都输入坐标，更自由
-            nxy = ImageMatrixTransform.relative_xy_template
-            nxy.update(xy_obj)
-            return [
-                nxy["left_top"],
-                (self.img.width + nxy["right_top"][0], nxy["right_top"][1]),
+            base_xy = {**ImageMatrixTransform.relative_xy_template}
+            base_xy.update(xy_obj.dict(exclude_unset=True))
+
+            return (
+                base_xy["left_top"],
+                (self.img.width + base_xy["right_top"][0], base_xy["right_top"][1]),
                 (
-                    self.img.width + nxy["right_down"][0],
-                    self.img.height + nxy["right_down"][1],
+                    self.img.width + base_xy["right_down"][0],
+                    self.img.height + base_xy["right_down"][1],
                 ),
-                (nxy["left_down"][0], self.img.height + nxy["left_down"][1]),
-            ]
+                (base_xy["left_down"][0], self.img.height + base_xy["left_down"][1]),
+            )
 
         # 返回测试坐标
-        return [(50, 50), (250, 250), (300, 300), (50, 350)]
+        return ((50, 50), (250, 250), (300, 300), (50, 350))
 
     @staticmethod
     def PerspectiveTransform(background_xy: XY_LIST, front_xy: XY_LIST) -> XY_LIST:
@@ -171,7 +179,7 @@ class ImageMatrixTransform:
 
 
 if __name__ == "__main__":
-    tar: str = r"./test/test.png"
-    xy = {"left_top": (50, 150)}
+    tar: str = r"../../test/test.png"
 
+    xy = MatrixXY(left_top=(50, 150))
     tar = ImageMatrixTransform(tar, xy=xy).to_show().to_file()

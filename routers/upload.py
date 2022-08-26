@@ -13,11 +13,9 @@ import sys
 from os import path
 
 sys.path.append("..")
-from fastapi import APIRouter, FastAPI
-from fastapi import UploadFile, Depends, HTTPException
+from fastapi import APIRouter, FastAPI, File, Form
+from fastapi import UploadFile, Depends, HTTPException, HTMLResponse
 
-from tools.uploader import Uploader
-from fastapi.responses import HTMLResponse
 from config import get_settings, Settings
 from Types import Res, Err, Fileinfo
 
@@ -28,7 +26,12 @@ def init(app: FastAPI):
     app.include_router(router)
 
     @router.post("/upload_file")
-    async def upload_file(file: UploadFile, config: Settings = Depends(get_settings)):
+    async def upload_file(
+        firstName: str,
+        lastName: str,
+        file: UploadFile,
+        config: Settings = Depends(get_settings),
+    ):
         output_path = path.join(config.upload_path, file.filename)
 
         upload_res = await Uploader.stream_file(file, output_path)
