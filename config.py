@@ -76,5 +76,5 @@ class Settings(BaseSettings):
 # 缓存配置文件到cache，不用每次调用接口都读取文件io
 @lru_cache
 def get_settings():
-    print("服务器初始化: ", os.getcwd())
+    print("run get_settings()")
     return Settings()

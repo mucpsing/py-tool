@@ -17,20 +17,28 @@ if __name__ == "__main__":
 
 import os
 from os import path
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Form, File
 from fastapi import UploadFile, HTTPException, Depends
 from loguru import logger
 
+from typing import Optional, NewType
 from tools.uploader import Uploader
 from config import get_settings, Settings
 from Types import Res
 
-from core.image.matrix_transform import ImageMatrixTransform
+from core.image.matrix_transform import (
+    ImageMatrixTransform,
+    MatrixXY,
+    PositionMode,
+)
 
 description = """
+
 """
 
 router = APIRouter()
+
+ParamPoint2D = NewType("x,y", str)
 
 
 def init(app: FastAPI):
@@ -48,7 +56,13 @@ def init(app: FastAPI):
         description=description,
     )
     def image_matrix_transform_router(
-        file: UploadFile, config: Settings = Depends(get_settings)
+        left_top: ParamPoint2D = Form(None, description="左上角", example="x,y"),
+        right_top: ParamPoint2D = Form(None, description="右上角", example="x,y"),
+        right_down: ParamPoint2D = Form(None, description="左下角", example="x,y"),
+        left_down: ParamPoint2D = Form(None, description="右下角", example="x,y"),
+        position_mode: PositionMode = Form(PositionMode.ABSOLUTE),
+        file: UploadFile = File(),
+        config: Settings = Depends(get_settings),
     ):
 
         output_path = path.join(config.image_matrix_upload_path, file.filename)
@@ -62,6 +76,7 @@ def init(app: FastAPI):
         logger.debug(f"文件上传成功{file.filename}")
 
         # ImageMatrixTransform(upload_res).to_file()
+        return Res(msg="入参: ", res=xy.dict())
 
 
 if __name__ == "__main__":
