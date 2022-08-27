@@ -65,7 +65,7 @@ class Settings(BaseSettings):
 
     # 图片相关接口配置
     image_matrix_enable: bool = True
-    image_matrix_upload_url: str = "/image/matrix_transform"
+    image_matrix_upload_url: str = "/static/image/matrix_transform"
     image_matrix_upload_path: str = path.join(STATIC_PATH, "image/matrix_transform")
 
     class Config:

@@ -49,7 +49,7 @@ class ImageMatrixTransform:
         self.img = Image.open(img).convert("RGBA")
         self.mode = mode  # absolute | relative 相对坐标或者绝对坐标
         self.transform_img: PIL_IMG = None  # 用来存放改变透视后的图片实例
-        self.xy_obj = MatrixXY(
+        self.img_xy_obj = MatrixXY(
             **{
                 "left_top": [0, 0],
                 "right_top": [self.img.width, 0],
@@ -73,17 +73,21 @@ class ImageMatrixTransform:
         return self.transform_img
 
     def to_file(self, output_path: str = "") -> str:
-        if not output_path:
-            dirname = path.dirname(self.img_path)
-            name, ext = path.splitext(path.basename(self.img_path))
-            output_path = path.join(
-                dirname, f"{name}_{int(time.time())}_transform{ext}"
-            )
+        try:
+            if not output_path:
+                dirname = path.dirname(self.img_path)
+                name, ext = path.splitext(path.basename(self.img_path))
+                output_path = path.join(
+                    dirname, f"{name}_{int(time.time())}_transform{ext}"
+                )
 
-        if self.transform_img:
-            self.transform_img.save(output_path)
+            if self.transform_img:
+                self.transform_img.save(output_path)
 
-        return output_path
+            return output_path
+        except Exception as e:
+            print("to_file fail", e)
+            return ""
 
     def to_show(self):
         if self.transform_img:
@@ -114,11 +118,11 @@ class ImageMatrixTransform:
 
         return self
 
-    def conver_xy_obj_2_list(self, xy_obj: MatrixXY) -> XY_LIST:
+    def conver_xy_obj_2_list(self, new_xy_obj: MatrixXY) -> XY_LIST:
         """
         将四点坐标转换为数组，然后使用np能更快的计算，入参采用对象的方式，入参不用每个位置都输入坐标，更自由
 
-        - param xy_obj :{MatrixXY} 对象形式的坐标点信息，类型仅作提示，不需实际采用
+        - param new_xy_obj :{MatrixXY} 对象形式的坐标点信息，类型仅作提示，不需实际采用
 
         @example
         ```py
@@ -128,8 +132,8 @@ class ImageMatrixTransform:
         """
 
         if self.mode == PositionMode.ABSOLUTE:
-            base_xy = self.xy_obj.dict()
-            base_xy.update(xy_obj.dict(exclude_unset=True))
+            base_xy = self.img_xy_obj.dict()
+            base_xy.update(new_xy_obj.dict(exclude_none=True))
 
             return (
                 base_xy["left_top"],
@@ -140,7 +144,7 @@ class ImageMatrixTransform:
 
         elif self.mode == PositionMode.RELATIVE:
             base_xy = {**ImageMatrixTransform.relative_xy_template}
-            base_xy.update(xy_obj.dict(exclude_unset=True))
+            base_xy.update(new_xy_obj.dict(exclude_none=True))
 
             return (
                 base_xy["left_top"],
@@ -181,5 +185,7 @@ class ImageMatrixTransform:
 if __name__ == "__main__":
     tar: str = r"../../test/test.png"
 
-    xy = MatrixXY(left_top=(50, 150))
-    tar = ImageMatrixTransform(tar, xy=xy).to_show().to_file()
+    xy = MatrixXY(left_top=(50, 150), right_down=None)
+    print("xy: ", xy.dict(exclude_unset=True))
+
+    # tar = ImageMatrixTransform(tar, xy=xy).to_show().to_file()
