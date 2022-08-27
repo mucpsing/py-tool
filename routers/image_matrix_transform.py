@@ -15,13 +15,12 @@ if __name__ == "__main__":
     sys.path.append("..")
     sys.path.append("../../")
 
-import os
 from os import path
 from fastapi import APIRouter, FastAPI, Form, File
 from fastapi import UploadFile, HTTPException, Depends
 from loguru import logger
 
-from typing import Optional, NewType
+from typing import Counter, NewType
 from tools.uploader import Uploader
 from config import get_settings, Settings
 from Types import Res
@@ -55,28 +54,44 @@ def init(app: FastAPI):
         summary="图片2D矩阵变换",
         description=description,
     )
-    def image_matrix_transform_router(
-        left_top: ParamPoint2D = Form(None, description="左上角", example="x,y"),
+    async def image_matrix_transform_router(
+        left_top: ParamPoint2D = Form(None, description="左上角", example="[x,y]"),
         right_top: ParamPoint2D = Form(None, description="右上角", example="x,y"),
         right_down: ParamPoint2D = Form(None, description="左下角", example="x,y"),
         left_down: ParamPoint2D = Form(None, description="右下角", example="x,y"),
-        position_mode: PositionMode = Form(PositionMode.ABSOLUTE),
+        position_mode: PositionMode = Form(
+            PositionMode.ABSOLUTE, description="明确是绝对坐标还是相对坐标"
+        ),
         file: UploadFile = File(),
         config: Settings = Depends(get_settings),
     ):
+        spliter = ","
+        try:
+            xy = MatrixXY(
+                **{
+                    "left_top": tuple(left_top.split(spliter)) if left_top else None,
+                    "right_top": tuple(right_top.split(spliter)) if right_top else None,
+                    "right_down": tuple(right_down.split(spliter))
+                    if right_down
+                    else None,
+                    "left_down": tuple(left_down.split(spliter)) if left_down else None,
+                }
+            )
+        except Exception as e:
+            raise HTTPException(200, detail=f"上传失败{e}")
 
         output_path = path.join(config.image_matrix_upload_path, file.filename)
-
-        upload_res = Uploader.stream_file_sync(file, output_path)
+        upload_res = await Uploader.stream_file_sync(file, output_path)
 
         if not upload_res:
             logger.debug(f"{file.filename} 上传失败")
             raise HTTPException(200, detail="上传失败")
 
         logger.debug(f"文件上传成功{file.filename}")
-
-        # ImageMatrixTransform(upload_res).to_file()
-        return Res(msg="入参: ", res=xy.dict())
+        to_file_res = ImageMatrixTransform(output_path, xy).to_file()
+        if to_file_res:
+            url = f"{config.image_matrix_upload_url}/{path.basename(to_file_res)}"
+            return Res(msg="入参: ", res={"url": url})
 
 
 if __name__ == "__main__":
