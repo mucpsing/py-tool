@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     app_port: int = 4040  # 端口
     app_version: str = "v1"
     app_description: str = DESCRIPTION
+    app_routers_decs_path: str = path.join(ROOT_PATH, "docs")
     app_contact: dict = CONTACT
     app_license_info: dict = LICENSE_INFO
     app_inner_ip: str = get_inside_ip()
@@ -65,8 +66,10 @@ class Settings(BaseSettings):
 
     # 图片相关接口配置
     image_matrix_enable: bool = True
-    image_matrix_upload_url: str = "/static/image/matrix_transform"
-    image_matrix_upload_path: str = path.join(STATIC_PATH, "image/matrix_transform")
+    image_matrix_upload_url: str = "/static/upload/image/matrix_transform"
+    image_matrix_upload_path: str = path.join(
+        STATIC_PATH, "upload/image/matrix_transform"
+    )
 
     class Config:
         env_file: str = path.join(ROOT_PATH, "config.ini")  # 读取失败

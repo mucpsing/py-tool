@@ -53,15 +53,37 @@ def init(app: FastAPI):
         return HTMLResponse(
             """
 <form id="form">
-    First name: <input type="text" name="firstName" value="Mickey"><br>
-    Last name: <input type="text" name="lastName" value="Mouse"><br>
+    左上角坐标: <input type="text" name="left_top" value="Mickey">
+    <br>
+
+    右上角坐标: <input type="text" name="left_top" value="Mouse">
+    <br>
+
+    左下角坐标: <input type="text" name="right_down" value="Mouse">
+    <br>
+
+    右下角坐标: <input type="text" name="left_down" value="Mouse">
+    <br>
+
+    坐标模式:
+    <label for="position_mode">坐标模式:</label>
+    <select name="pets" id="position_mode">
+        <option value="">--Please choose an option--</option>
+        <option value="dog">Dog</option>
+        <option value="cat">Cat</option>
+        <option value="hamster">Hamster</option>
+        <option value="parrot">Parrot</option>
+        <option value="spider">Spider</option>
+        <option value="goldfish">Goldfish</option>
+    </select>
+
     <input type="file" name="file"><br>
 </form>
 
-<button onclick="submitForm()">提交</button>
+<button onclick="upload()">提交</button>
 
 <script>
-    function submitForm() {
+    function upload() {
         var formElement = document.getElementById("form");
 
         var xhr = new XMLHttpRequest();

@@ -14,12 +14,18 @@ import enum, time
 from PIL import Image
 from os import path
 from typing import NewType, Optional, TypeAlias
+import PIL
 
 from pydantic import BaseModel
 
 PIL_IMG = NewType("Image.open()", object)
 Point2D: TypeAlias = tuple[int, int]
 XY_LIST: TypeAlias = list[Point2D]
+
+version = PIL.__version__.split(".")
+if float(f"{version[0]}.{version[1]}") < 9.2:
+    raise Exception(f"当前PIL版本太低: {PIL.__version__} (请使用9.x之后的版本)")
+    exit(0)
 
 
 class MatrixXY(BaseModel):
@@ -64,9 +70,9 @@ class ImageMatrixTransform:
         if xy:
             self.transform(xy)
 
-    def __del__(self):
-        self.img.close()
-        self.transform_img.close()
+    # def __del__(self):
+    #     self.img.close()
+    #     self.transform_img.close()
 
     @property
     def result(self) -> PIL_IMG:
@@ -183,9 +189,12 @@ class ImageMatrixTransform:
 
 
 if __name__ == "__main__":
-    tar: str = r"../../test/test.png"
+    tar = r"../../test/test.png"
+    tar = r"C:\Users\M2-WIN10\Pictures/test.jpg"
 
-    xy = MatrixXY(left_top=(50, 150), right_down=None)
+    print(PIL.__version__)
+
+    xy = MatrixXY(left_top=(160, 160), right_down=None)
     print("xy: ", xy.dict(exclude_unset=True))
 
-    # tar = ImageMatrixTransform(tar, xy=xy).to_show().to_file()
+    tar = ImageMatrixTransform(tar, xy=xy).to_show().to_file()
