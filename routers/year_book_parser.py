@@ -26,7 +26,7 @@ from Types import Res
 from core.year_book.abby import ABBYYearBookExcelFilter
 from core.year_book.config import DEFAULT_SETTINGS
 
-router = APIRouter()
+router = APIRouter(tags=["年鉴识别"])
 
 description = """
 # 处理ABBY识别后导出的xlsx结果文件

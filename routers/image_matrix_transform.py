@@ -41,7 +41,7 @@ description = """
 - 
 """
 
-router = APIRouter()
+router = APIRouter(tags=["图片修改"])
 
 ParamPoint2D = NewType("str: 'x,y' 用逗号分割", str)
 

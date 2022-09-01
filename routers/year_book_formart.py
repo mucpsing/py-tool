@@ -25,7 +25,7 @@ from Types import Res
 
 from core.year_book.split import formater
 
-router = APIRouter()
+router = APIRouter(tags=["年鉴识别"])
 
 description = """
 ## 导出格式为：
@@ -48,7 +48,7 @@ def init(app: FastAPI):
     @router.post(
         "/abby_yearbook_excel_formater",
         response_model=Res,
-        summary="年鉴-[洪水水文摘录表]，根据站名按sheet分类重新生成excel文件",
+        summary="[洪水水文摘录表]，根据站名按sheet分类重新生成excel文件",
         description=description,
     )
     def year_book_formater_router(
