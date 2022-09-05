@@ -10,17 +10,21 @@
 # @Description: 功能描述
 #
 
+import enum
 import time, os
 import pandas as pd
 import geopandas as gpd
 import numpy as np
 
-from mikeio import Dfsu, Mesh
+from os import path
+from pydantic import BaseModel
+from pandas import DataFrame
+from mikeio import Dfsu, Mesh, Dataset
 from hashlib import md5
 from tempfile import TemporaryDirectory
 from shutil import copy2
 
-from typing import *
+from typing import TypedDict
 
 if str(pd.__version__) != "1.3.0":
     print("本插件仅支持 pandas 1.3.0 (否则失去保存xls功能)")
@@ -38,23 +42,34 @@ class TMikeData(TypedDict):
 class TTableData(TypedDict):
     file_name: str
     column_name: str
-    column_data: List[float]
+    column_data: list[float]
+
+
+class Method(str, enum.Enum):
+    cubic = "cubic"
+
+
+class TMikeOptions(BaseModel):
+    method: Method
+    sheet_name: str = ""
+    column_name: str = ""
+    item_name: str = ""
+    setp: int
 
 
 class MikeIo(object):
     def __init__(self):
-        self.dfs = None
-        self.mesh = None
+        self.dfsu = None  # 数据容器，通过Dfus读取后的实例地址
+        self.mesh = None  #
         self.len = 0
         self.currt_file = ""
 
-        self.x: List[float] = []
-        self.y: List[float] = []
+        self.x: list[float] = []
+        self.y: list[float] = []
 
-        self.data: "TMikeData" = (
-            {}
-        )  # {'sheet_name':[{'column_name':'xxxxx', 'column_data':'xxxxx', 'file_name':'xxxxx'}]}
-        self.file_readed_list = []
+        # {'sheet_name':[{'column_name':'xxxxx', 'column_data':'xxxxx', 'file_name':'xxxxx'}]}
+        self.data: TMikeData = {}
+        self.file_readed_list: list[str] = []  # 已经处理过的文件
         self.tmp_dir = None
 
     def __len__(self):
@@ -63,7 +78,16 @@ class MikeIo(object):
     def __str__(self):
         return f"当前已处理 {len(self.file_readed_list)} 个文件： {[*self.file_readed_list]}"
 
-    def read(
+    def __del__(self):
+        self.clean()
+
+    @staticmethod
+    def file_check(filename: str) -> tuple[str, str]:
+        name, ext = os.path.basename(filename).split(".")
+
+        return (name, ext)
+
+    def parser(
         self,
         filename: str,
         item: str = "",
@@ -71,11 +95,10 @@ class MikeIo(object):
         setp=-1,
         sheet_name: str = "",
         method: str = "cubic",
-    ) -> dict:
+    ):
         """
         Description 获取指定类型、时间步长的对应数据
 
-        - param self        :{params} {description}
         - param filename    :{str}    文件名，绝对路径
         - param item        :{str}    需要提取的数据类型|Current_direction|Current_speed|U_velocity|V_velocity|...
         - param column_name :{str}    属性最终的列名
@@ -101,30 +124,39 @@ class MikeIo(object):
         data = []
         name, ext = os.path.basename(filename).split(".")
 
-        if ext == "dfsu":
-            # 防止重复读取同一文件
-            if self.currt_file != filename:
-                try:
-                    self.dfsu = Dfsu(filename)
-                    self.currt_file = filename
-                except Exception:
-                    print("tips >>> 使用英文或数字命名文件，数据提取速度将会大大提升")
-                    tmp_file = self.create_tmp_file(filename)
-                    self.dfsu = Dfsu(tmp_file)
-                    self.currt_file = filename
-
-            if not self.dfsu:
-                return print(f"无法读取文件{filename}")
-
-            # 通过self.dfsu 读取数据
-            data = self.get_dfsu_data(item=item, setp=setp)
-            print("data.shape: ", data.shape)
-
-        # data 异常
-        if len(data) == 0:
+        # 格式检查
+        if not ext == "dfsu":
+            print(f"进支持后后缀名为 dfsu 的数据格式")
             return self
 
-        # 是否都保存在同一个sheet内
+        # 防止重复读取同一文件
+        if self.currt_file == filename:
+            # 当前处理同一文件，不用重新读取
+            return self
+
+        self.currt_file = filename
+
+        # 中文命名的文件无法直接处理
+        if name.isascii():
+            tmp_file = self.create_tmp_file(filename)
+            print("tips >>> 使用英文或数字命名文件，数据提取速度将会大大提升")
+            self.dfsu = Dfsu(tmp_file)
+        else:
+            self.dfsu = Dfsu(filename)
+
+        if not self.dfsu:
+            print(f"读取{filename}失败")
+            return self
+
+        # 读取数据到 self.dfsu
+        data = self.get_dfsu_data(item=item, setp=setp)
+
+        # data 异常
+        if len(data) == 0 or not self.dfsu:
+            print(f"data异常，无法读取文件{filename}")
+            return self
+
+        # 如果不指定sheet_name，则以网格数量为名称存储
         if sheet_name == "":
             sheet_name = f"mesh_{len(data)}"
 
@@ -132,18 +164,9 @@ class MikeIo(object):
         if column_name == "":
             column_name = name
 
-        # 是否需要重新重置，如果xy与数据一致，则不需要
-        # if len(self.x) != len(data):
-        #     # 根据xy来重新插值数据
-        #     print("根据xy来重新插值数据: ")
-        #     points = self.dfsu.element_coordinates[:,0:2]
-        #     data = self.get_data_by_xy(self.x, self.y, points, data, method)
-        #     data = self.check_data(data)
-
         # 如果当前网格未提取xy 则进行提取
         if not sheet_name in self.data:
             self.data[sheet_name] = []
-            element_coordinates = self.dfsu.element_coordinates
             xyz = pd.DataFrame(self.dfsu.element_coordinates)
             self.data[sheet_name].append(
                 {"column_name": "x", "column_data": xyz[0]}
@@ -153,7 +176,7 @@ class MikeIo(object):
             )  # y 为第二项数据
 
         # 检查一边数据，替换不合法的数据为0
-        data = self.check_data(data)
+        self.check_data(data)
 
         self.data[sheet_name].append(
             {
@@ -167,10 +190,9 @@ class MikeIo(object):
         if not f"{name}.{ext}" in self.file_readed_list:
             self.file_readed_list.append(f"{name}.{ext}")
 
-        return data
+        return self
 
-    @staticmethod
-    def get_data_by_xy(x, y, points, data, method="cubic"):
+    def get_data_by_xy(self, x, y, points, data, method="cubic"):
         xi, yi = np.meshgrid(x, y)
         interpolate_res = griddata(points, data, (xi, yi), method="cubic")
 
@@ -197,59 +219,54 @@ class MikeIo(object):
         return res
 
     # 读取dfsu文件
-    def get_dfsu_data(self, item: str, setp: int = -1):
+    def get_dfsu_data(self, item: str, setp: int = -1) -> Dataset:
         # 防重读取
         res = None
 
         if item.lower() == "current direction":
-            print(1)
-            res = self.get_dfsu_direction(setp)[:]
+            res = MikeIo.get_dfsu_direction(setp)[:]
 
         elif item.lower() == "current speed":
-            print(2)
-
-            res = self.get_dfsu_speed(setp)[:]
+            res = MikeIo.get_dfsu_speed(setp)[:]
 
         else:
-            print(3)
+            # 读取所有
             res = self.dfsu.read([item])[0][setp][:]
 
-        print("res: ", res.shape)
-        return self.check_data(res)
+        return res
 
     # 获取dfsu文件的流速数据
     # return {narray}
-    def get_dfsu_direction(self, setp: int = -1):
+    @staticmethod
+    def get_dfsu_direction(dfsu: Dfsu, setp: int = -1):
         try:
-            u, v = self.dfsu.read(["U velocity", "V velocity"])
+            res = dfsu.read()["Current direction"][setp] * 180 / 3.14
+
+        except KeyError:
+            u, v = dfsu.read(["U velocity", "V velocity"])
             u = u[setp]
             v = v[setp]
-            return np.mod(90 - np.rad2deg(np.arctan2(v, u)), 360)
-        except KeyError:
-            return self.dfsu.read()["Current direction"][setp] * 180 / 3.14
+            res = np.mod(90 - np.rad2deg(np.arctan2(v, u)), 360)
+
+        return res
 
     # 获取dfsu文件的流速数据
     # return {narray}
-    def get_dfsu_speed(self, setp: int = -1):
-        print(123123)
+    @staticmethod
+    def get_dfsu_speed(dfsu: Dfsu, setp: int = -1):
         item = "Current speed"
+        res = None
         try:
-            u, v = self.dfsu.read(["U velocity", "V velocity"])
-            print("u: ", u.shape)
-            print("v: ", v.shape)
-
-            u = u[setp]
-            v = v[setp]
-
-            return np.sqrt(u**2 + v**2)
+            # res = self.dfsu.read(['Current speed'])[0]
+            res = dfsu.read()[item][setp]
 
         except KeyError:
-            print("获取 U V 失败")
-            # res = self.dfsu.read(['Current speed'])[0]
+            u, v = dfsu.read(["U velocity", "V velocity"])
+            u = u[setp]
+            v = v[setp]
+            res = np.sqrt(u**2 + v**2)
 
-            res = self.dfsu.read()[item][setp]
-
-            return res
+        return res
 
     def check_data(self, data, fix=True, tip=True):
         """
@@ -259,8 +276,6 @@ class MikeIo(object):
         - param data :{params} {description}
         - param fix  :{bool}   是否修复为0
         - param tip  :{bool}   是否打印出提示信息
-
-        returns `{}` {description}
 
         """
         name, ext = os.path.basename(self.currt_file).split(".")
@@ -273,9 +288,9 @@ class MikeIo(object):
                 if tip:
                     print(f"警告！ >>> 文件：{name}.{ext}，位置：<{ index + 1 }> 的数据为空值")
 
-        return data
-
     def create_tmp_file(self, filename):
+        """处理中文名字的文件，重命名同时拷贝到临时文件夹再进行数据读取"""
+
         # 创建临时目录
         if not self.tmp_dir:
             self.tmp_dir = TemporaryDirectory()
@@ -403,12 +418,10 @@ class MikeIo(object):
         # 遍历数据，找出target1和target2的数据
         flag = False
         for each_sheet_name in self.data.keys():
-            print("sheet_name: ", each_sheet_name)
             if flag:
                 break
 
             for each_column in self.data[each_sheet_name]:
-                print("column_name: ", each_column["column_name"])
                 sheet_name = each_sheet_name
 
                 if len(tar1) == 0 and each_column["column_name"] == target1:
@@ -428,10 +441,10 @@ class MikeIo(object):
         if len(tar2) == 0:
             return print("没有找到target2 数据")
         if len(tar1) != len(tar2):
-            return print("target1 和target2 的数量不一致，无法计算差值")
+            return print("target1 和target2 的数量长度不一致，无法计算差值")
 
         sub = np.round(tar1 - tar2, 3)
-        sub = self.check_data(sub)
+        self.check_data(sub)
 
         if column_name == "":
             column_name = f"{target1}_{target2}"
@@ -446,7 +459,6 @@ class MikeIo(object):
 
 
 if __name__ == "__main__":
-    from mikepy import MikeIo
     from pathlib import Path
 
     xyz = "./data/xy.xyz"

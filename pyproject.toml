@@ -31,3 +31,7 @@ xarray="^2022.6.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+reportOptionalMemberAccess = false
+extraPaths = [".venv",".venv/Lib",".venv/Lib/site-packages"]
