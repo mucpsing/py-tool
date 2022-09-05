@@ -12,6 +12,7 @@ __pycache__/
 *.xlsx
 *.exe
 
+
 # Distribution / packaging
 .Python
 build/
