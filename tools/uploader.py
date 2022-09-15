@@ -26,7 +26,7 @@ class Uploader:
             return False
 
     @staticmethod
-    async def stream_file(file, output_path: str, batch_size: int = None) -> bool:
+    def stream_file(file, output_path: str, batch_size: int = None) -> bool:
         """
         大文件上传，以流的形式按量读取保存文件，默10m
         """

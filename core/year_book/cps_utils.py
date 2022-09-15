@@ -1,4 +1,24 @@
-import time
+# -*- coding: utf-8 -*-
+#
+# @Author: CPS
+# @email: 373704015@qq.com
+# @Date: 2022-09-08 14:40:02.761606
+# @Last Modified by: CPS
+# @Last Modified time: 2022-09-08 14:40:02.761606
+# @file_path "W:\CPS\MyProject\python-tools\py-tool\core\year_book"
+# @Filename "cps_utils.py"
+# @Description: 工具类，存放一些工具函数
+#
+if __name__ == "__main__":
+    import sys
+
+    sys.path.append("..")
+    sys.path.append("../../")
+
+import os, time
+from os import path
+
+from pydantic import BaseModel
 from functools import wraps
 
 
@@ -101,6 +121,26 @@ def func_timeit(count=1):
     return detector
 
 
+def get_output_name(intput_name: str) -> str:
+    """
+    返回一个与源文件名字相似，添加了时间后缀的文件名
+
+    @example
+    ```python
+    input = r"./ccvb.xlsx"
+    print(get_output_name(t))
+
+    >>> ".\ccvb_1662619457.xlsx"
+    ```
+    """
+    dir_name = path.dirname(intput_name)
+    name, ext = path.splitext(path.basename(intput_name))
+    output_name = path.join(dir_name, f"{name}_{int(time.time())}{ext}")
+    return output_name
+
+
 if __name__ == "__main__":
     target = " --__-  －－-１  sss２ asdfasdf ０ 。  "
-    print(get_int(target))
+    t = "./ccvb.xlsx"
+
+    print(get_output_name(t))

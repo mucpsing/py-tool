@@ -156,9 +156,6 @@ class ABBYYearBookExcelFilter:
         is_page = cps_utils.get_int(row_data[0])
         if is_page > -1:
             return True
-
-        pd.ExcelFile
-
         return False
 
     def find_station_name(self, row_data_list: Series) -> str:

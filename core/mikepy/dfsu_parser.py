@@ -59,8 +59,8 @@ class TMikeOptions(BaseModel):
 
 class MikeIo(object):
     def __init__(self):
-        self.dfsu = None  # 数据容器，通过Dfus读取后的实例地址
-        self.mesh = None  #
+        self.dfsu: Dfsu = None  # 数据容器，通过Dfus读取后的实例地址
+        self.mesh: Mesh = None  #
         self.len = 0
         self.currt_file = ""
 
@@ -224,10 +224,10 @@ class MikeIo(object):
         res = None
 
         if item.lower() == "current direction":
-            res = MikeIo.get_dfsu_direction(setp)[:]
+            res = MikeIo.get_dfsu_direction(self.dfsu, setp)[:]
 
         elif item.lower() == "current speed":
-            res = MikeIo.get_dfsu_speed(setp)[:]
+            res = MikeIo.get_dfsu_speed(self.dfsu, setp)[:]
 
         else:
             # 读取所有
@@ -453,7 +453,6 @@ class MikeIo(object):
             self.data[sheet_name].append(
                 {"column_data": sub, "column_name": column_name}
             )
-            return True
 
         return sub
 
