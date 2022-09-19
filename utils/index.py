@@ -17,6 +17,7 @@ def get_inside_ip() -> str:
 
     finally:
         s.close()
+        return "127.0.0.1"
 
 
 def get_az(start: str | int, end: str | int = None) -> str:

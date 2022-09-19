@@ -74,8 +74,8 @@ class Settings(BaseSettings):
     # mike接口相关
     mikeio_enable: bool = True
     mikeio_upload_path: str = path.join(ROOT_PATH, "static/upload/mikeio")
-    mikeio_output_path: str = path.join(ROOT_PATH, "static/upload/mikeio/shp")
-    mikeio_upload_url: str = "/static/upload/mikeio/shp"
+    mikeio_output_path: str = path.join(ROOT_PATH, "static/upload/mikeio/res")
+    mikeio_upload_url: str = "/static/upload/mikeio/res"
     mikeio_log_file: str = path.join(ROOT_PATH, "logs", "mikeio.log")
 
     class Config:
