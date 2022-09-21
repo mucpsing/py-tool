@@ -55,16 +55,17 @@ def dfsu_to_file(
     dfsu_file: str,
     out_file: str = None,
     *,
+    items: list[str | int] = None,
     setp: str | int = -1,
-    exclude_value: list[int] = list(),
+    exclude_value: list[int] = None,
 ) -> str:
     """
     解析dfsu，将指定的数据导出为shp文件
 
-    - param dfsu_file :{str} {description}
-    - param out_file  :{str} {description}
-    - param item      :{int|DataItem} {description}
-    - param setp      :{str} {description}
+    - param dfsu_file :{str}                {description}
+    - param out_file  :{str}                {description}
+    - param items     :{list[str | int]}    {description}
+    - param setp      :{str}                {description}
 
     @returns `{ str}` {description}
 
@@ -76,23 +77,23 @@ def dfsu_to_file(
         dfs = mikeio.open(dfsu_file)
         xy = DataFrame(dfs.element_coordinates)
 
-        # 获取具体数据
-        all_data = dfs.read(
-            items=["Current speed", "Current direction"],
-            time=setp,
-        )
+        # 当前不可用
+        if not items:
+            items = ["Current speed", "Current direction"]
+
+        all_data = dfs.read(items=items, time=setp)
         z_speed = np.round(all_data[0].values, 3)
         z_direction_rad = np.round(all_data[1].values, 3)
         z_direction_angle = z_direction_rad * 180 / 3.14
-        coords = {"x": [], "y": []}
+        coords = dict()
+        data = dict()
 
         # 根据exclude_value数据过滤数据
-        if len(exclude_value) > 0:
-            data = {
-                "rad": [],
-                "angle": [],
-                "speed": [],
-            }
+        if exclude_value:
+            data["rad"] = []
+            data["angle"] = []
+            data["speed"] = []
+
             for index in range(0, len(z_direction_rad)):
                 if int(z_direction_angle[index]) in exclude_value:
                     continue
@@ -104,11 +105,9 @@ def dfsu_to_file(
                 data["speed"].append(z_speed[index])
         else:
             coords = {"x": xy[0], "y": xy[1]}
-            data = {
-                "speed": z_speed,
-                "angle": z_direction_rad,
-                "speed": z_speed,
-            }
+            data["speed"] = (z_speed,)
+            data["angle"] = (z_direction_rad,)
+            data["speed"] = (z_speed,)
 
         df = DataFrame(data)
 

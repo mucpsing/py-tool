@@ -95,21 +95,22 @@ def init(app: FastAPI):
         logger.debug(f"{file.filename} 上传失败")
         raise HTTPException(200, detail="上传失败")
 
-    @router.post(
-        "/dfsu_to_file", summary="获取dfsu文件指定时间和项目的数据，导出成xyz的文件", response_model=Res
-    )
+    @router.post("/dfsu_to_file", summary="提取dfsu文件数据，暂时仅支持流速和流向", response_model=Res)
     def to_file(
         file: UploadFile = File(...),
         config: Settings = Depends(get_settings),
-        item: DataItem = Form(
-            DataItem.speed,
-            description="流速: `Current speed`| 流向: `Current direction`",
-        ),
+        # items: DataItem = Form(
+        #     DataItem.speed,
+        #     description="流速: `Current speed`| 流向: `Current direction`",
+        # ),
         setp: int = Form(-1, description="要提取的时间步进，0为第一个，-1为最后一个，以此类推"),
         output_name: str = Form(
             None, description="结果文件的名称，当前支持后缀 `xls`|`xlsx`|`xyz`|`txt`|`shp`"
         ),
         over_write: bool = Form(True, description="已存在文件是否覆盖"),
+        exclude_value: bool = Form(
+            False, description="过滤部分流向数据，如果模型河道比实际地形范围要大很多，建议过滤一些0或者360的角度，一般不是正确的流向"
+        ),
     ):
 
         filename, ext = path.splitext(file.filename)
@@ -127,14 +128,19 @@ def init(app: FastAPI):
             output_full_name = path.join(config.mikeio_output_path, output_name)
         else:
             output_full_name = path.join(
-                config.mikeio_output_path, f"{filename}_{item}_{int(time.time())}.xyz"
+                config.mikeio_output_path, f"{filename}_{int(time.time())}.xyz"
             )
 
         # 上传成功后
         if upload_res:
             logger.debug(f"output name:  {output_full_name}")
+            if exclude_value:
+                exclude_value = [0, 360]
             output = dfsu_to_file(
-                upload_file, out_file=output_full_name, item=item, setp=setp
+                upload_file,
+                out_file=output_full_name,
+                setp=setp,
+                exclude_value=exclude_value,
             )
             if not output:
                 Res(msg=f"文件处理失败{file.filename}", success=False)
