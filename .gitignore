@@ -13,6 +13,7 @@ __pycache__/
 *.exe
 *.dfsu
 *.mesh
+static/*
 
 
 # Distribution / packaging
