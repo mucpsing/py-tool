@@ -93,6 +93,8 @@ def dfsu_to_file(
             data["rad"] = []
             data["angle"] = []
             data["speed"] = []
+            coords["x"] = []
+            coords["y"] = []
 
             for index in range(0, len(z_direction_rad)):
                 if int(z_direction_angle[index]) in exclude_value:
@@ -105,9 +107,9 @@ def dfsu_to_file(
                 data["speed"].append(z_speed[index])
         else:
             coords = {"x": xy[0], "y": xy[1]}
-            data["speed"] = (z_speed,)
-            data["angle"] = (z_direction_rad,)
-            data["speed"] = (z_speed,)
+            data["speed"] = z_speed
+            data["angle"] = z_direction_rad
+            data["speed"] = z_speed
 
         df = DataFrame(data)
 
